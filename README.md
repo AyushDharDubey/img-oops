@@ -40,17 +40,12 @@
         * save(): Saves the assignment details to a JSON file.
         * __init__(self, title=None): This constructor is used to load an existing assignment or create a new assignment.
 
-**Functionality**
 
-* The code allows students to submit assignments, view their submitted assignments, and view all assignments.
-* It allows reviewers to create assignments, view assignments, approve student submissions, suggest iterations for submissions, and view all submissions for an assignment.
+**PS**
+
+* The code allows students to submit assignments, view their submitted assignments, and view all assignments and reviewers to create assignments, view assignments, approve student submissions, suggest iterations for submissions, and view all submissions for an assignment.
 * The code uses JSON files to store assignment details and student submissions.
-
-**PS:**
-
 * The code uses the 4 fundamental Object-Oriented Programming concepts namely inheritance, encapsulation, abstraction, and polymorphism.
-* The os library is used for file system operations. 
-* The json library is used for working with JSON data.
 * Here's a working image of the code
 
 <img class="image-placeholder" src="https://i.imgur.com/XU3kRm4.png" alt="">
