@@ -102,6 +102,7 @@ class Student(IMG_Member): #Inheritance
 
     def pending_assignments(self):
         pending = []
+        os.makedirs(f'data/assignments/submission/', exist_ok=True)
         for p in listdir(f'data/assignments/submission/'):
             if str(self.enrollment_no)+'.json' not in listdir(f'data/assignments/submission/' + p):
                 # print(str(self.enrollment_no)+'.json')
