@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json, os
 from os import listdir
 class Assignment:
@@ -52,6 +54,7 @@ class Assignment:
         self.reviewer=reviewer.enrollment_no
         self.title = title
         self.content = content
+        os.makedirs(f'data/assignments/', exist_ok=True)
         with open(f'data/assignments/{title}.json', 'w') as f:
             json.dump({
                 "reviewer": self.reviewer,
@@ -63,12 +66,27 @@ class Assignment:
 
 
 class IMG_Member:
-    def __init__(self, name, enrollment_no):
-        self.name=name
-        self.enrollment_no=enrollment_no
+    def __init__(self, enrollment_no, name=None):
+        if name:
+            self.name=name
+            self.enrollment_no=enrollment_no
+            os.makedirs(f'data/profile/', exist_ok=True)
+            with open(f'data/profile/{enrollment_no}.json', 'w') as f:
+                json.dump({
+                    'name':self.name,
+                    'enrollment_no': self.enrollment_no
+                },f)
+        else:
+            os.makedirs(f'data/profile/', exist_ok=True)
+            with open(f'data/profile/{enrollment_no}.json') as f:
+                p = json.load(f)
+                self.name=p['name']
+                self.enrollment_no=p['enrollment_no']
+        print(f'logged in as {self.name}')
 
     def get_profile(self):
-        return vars(self)
+        with open(f'data/profile/{self.enrollment_no}.json') as f:
+            return json.load(f)
 
     
 
@@ -77,7 +95,8 @@ class Student(IMG_Member): #Inheritance
 
     def get_profile(self): #Abstraction
         profile = super().get_profile()
-        profile['pending assignments'] = self.pending_assignments()
+        profile['pending'] = self.pending_assignments()
+        return profile
 
     def submit_assignment(self, assignment_title, content):
         a=Assignment(assignment_title)
@@ -98,7 +117,7 @@ class Student(IMG_Member): #Inheritance
             with open(f'data/assignments/submission/{assignment_title}/{self.enrollment_no}.json', 'r+') as f:
                 return json.load(f)
         except FileNotFoundError:
-            print('Assignment not yet submitted')
+            return
 
     def pending_assignments(self):
         pending = []
@@ -115,10 +134,17 @@ class Student(IMG_Member): #Inheritance
         return pending
 
 class Reviewer(IMG_Member):
-
     def create_assignment(self, title, content):
         na = Assignment()
         na.create_assignment(self, title, content)
+        with open(f'data/profile/{self.enrollment_no}.json') as f:
+            p=json.load(f)
+        with open(f'data/profile/{self.enrollment_no}.json', 'w') as f:
+            if p.get('assignments'):
+                p['assignments'].append(title)
+            else:
+                p['assignments']=[title]
+            json.dump(p, f)
         return f"Assignment '{title}' created by {self.name}."
 
     def view_assignment(self, title):
@@ -148,3 +174,123 @@ class Reviewer(IMG_Member):
             with open(f'data/assignments/submission/{assignment}/'+p, 'r+') as f:
                 submissions[p.split('.')[0]]=json.load(f)
         return submissions
+
+def student_menu(stud):
+    while True:
+        msg = '\n1) Get profile info\n2) Submit assignment\n3) Show pending assignments\n4) View your all submissions\n5) View specific assignment\'s submission\n'
+        inp = input(msg)
+        if inp == '1':
+            profile = stud.get_profile()
+            print(f"Name: {profile['name']}\nEnrollment no: {profile['enrollment_no']}\nPending Assignments: {', '.join(profile['pending'])}")
+        elif inp == '2':
+            title = input('Title: ')
+            print('Work:')
+            lines = []
+            while True:
+                line = input()
+                if line:
+                    lines.append(line)
+                else:
+                    break
+            content = '\n'.join(lines)
+            print(stud.submit_assignment(title, content))
+        elif inp == '3':
+                print('Pending assignments: ', ', '.join(stud.pending_assignments()) or 'None')
+        elif inp == '4':
+            subm = stud.view_all_submissions()
+            for title, sub in subm.items():
+                print(f'{title}:')
+                for iteration, work in sub['submission'].items():
+                    print(f'\t{iteration}: {work}', end=', ')
+                print(f'\n\tapproved: ', sub['approved'])
+        elif inp == '5':
+            inp = input('Title: ')
+            subm = stud.view_submission(inp)
+            if subm:
+                for iteration, work in subm['submission'].items():
+                    print(f'\t{iteration}: {work}', end=', ')
+                print(f'\n\tapproved: ', subm['approved'])
+            else:
+                print('Assignment not yet submitted')
+
+def reviewer_menu(rev):
+    while True:
+        msg = '\n1) Get profile info\n2) Create new assignment\n3) View all your assignments\n4) View submissions of specific assignment\n'
+        inp = input(msg)
+        if inp == '1':
+            profile = rev.get_profile()
+            print(f"Name: {profile['name']}\nEnrollment no: {profile['enrollment_no']}")
+        elif inp == '2':
+            title = input('Title: ')
+            print('Content:')
+            lines = []
+            while True:
+                line = input()
+                if line:
+                    lines.append(line)
+                else:
+                    break
+            content = '\n'.join(lines)
+            print(rev.create_assignment(title, content))
+        elif inp == '3':
+            a=rev.get_profile()['assignments']
+            if a:
+                print('Your assignments: ', ', '.join(a))
+            else:
+                print('No assignments created yet')
+        elif inp == '4':
+            title = input('Title: ')
+            submissions = rev.view_submissions(title)
+            if not submissions:
+                print(f'No submissions for {title}')
+                continue
+            for en, subm in submissions.items():
+                print(f'Student\'s enrollment no: {en}\nDetails:')
+                for iteration, work in subm['submission'].items():
+                    print(f'\t{iteration}: {work}', end=', ')
+                print(f'\n\tapproved: ', subm['approved'])
+            inp = input('\n1) Approve submission\n2) Suggest iteration\nPress enter to go back\n')
+            if inp=='1':
+                en=input('Enrollment no: ')
+                print(rev.approve_submission(en, title))
+            if inp=='2':
+                en=input('Enrollment no: ')
+                print('Suggestion: ')
+                lines = []
+                while True:
+                    line = input()
+                    if line:
+                        lines.append(line)
+                    else:
+                        break
+                suggestion = '\n'.join(lines)
+                rev.suggest_iteration(en, title, suggestion)
+
+
+if __name__ == '__main__':
+    msg = '1) Login as student\n2) Login as reviewer\n3) Create new student\n4) Create new reviewer\n'
+    while True:
+        inp = input(msg)
+        if inp == '1':
+            enrollment_no = input('Enrollment no: ')
+            try:
+                stud = Student(enrollment_no)
+            except FileNotFoundError:
+                print('No such user exists')
+            if (stud):
+                student_menu(stud)
+        elif inp == '2':
+            enrollment_no = input('Enrollment no: ')
+            rev = Reviewer(enrollment_no)
+            if rev:
+                reviewer_menu(rev)
+        elif inp == '3':
+            enrollment_no = input('Enrollment no: ')
+            name = input('Name: ')
+            stud = Student(enrollment_no, name)
+            student_menu(stud)
+        elif inp == '4':
+            enrollment_no = input('Enrollment no: ')
+            name = input('Name: ')
+            rev = Reviewer(enrollment_no, name)
+            reviewer_menu(rev)

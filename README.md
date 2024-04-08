@@ -48,4 +48,8 @@
 * The code uses the 4 fundamental Object-Oriented Programming concepts namely inheritance, encapsulation, abstraction, and polymorphism.
 * Here's a working image of the code
 
-![alt text](https://i.imgur.com/ENEvWWu.png)
+![create new assignment](https://i.imgur.com/3qTZNGc.png)
+
+![submit assignment](https://i.imgur.com/6zlmI4q.png)
+
+![approve submission](https://i.imgur.com/B5dQmR5.png)
